@@ -1,0 +1,36 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Загрузка данных
+data = pd.read_csv('train.csv')  # Замените на ваш файл с данными
+
+# Преобразование колонки 'Sales' в числовой формат
+data['Sales'] = pd.to_numeric(data['Sales'], errors='coerce')
+
+# Удаление строк с NaN после преобразования
+data = data.dropna(subset=['Sales'])
+
+# Шаг 1: Выявление и удаление аномалий с помощью метода межквартильного размаха (IQR)
+Q1 = data['Sales'].quantile(0.25)
+Q3 = data['Sales'].quantile(0.75)
+IQR = Q3 - Q1
+
+lower_bound = Q1 - 1.5 * IQR
+upper_bound = Q3 + 1.5 * IQR
+
+# Фильтрация данных с использованием IQR
+filtered_data = data[(data['Sales'] >= lower_bound) & (data['Sales'] <= upper_bound)]
+
+# Шаг 2: Построение boxplot без аномалий
+plt.figure(figsize=(10, 6))
+boxplot = sns.boxplot(x=filtered_data['Sales'])
+plt.title('Boxplot продаж без аномалий')
+
+# Добавление межквартильных черт
+plt.axvline(Q1, color='red', linestyle='--', label='Q1 (25-й процентиль)')
+plt.axvline(Q3, color='blue', linestyle='--', label='Q3 (75-й процентиль)')
+plt.axvline(filtered_data['Sales'].median(), color='green', linestyle='--', label='Медиана (Q2)')
+
+plt.legend()
+plt.show()
