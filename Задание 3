@@ -1,0 +1,35 @@
+import pandas as pd
+
+# Загрузка данных
+data = pd.read_csv('train.csv')
+
+# Преобразование колонки 'Sales' в числовой формат
+data['Sales'] = pd.to_numeric(data['Sales'], errors='coerce')
+
+# Удаление строк с NaN после преобразования
+data = data.dropna(subset=['Sales'])
+
+# Разбиение на группы продаж
+q1, q3 = data['Sales'].quantile([0.33, 0.67])
+data['Sale_group'] = pd.cut(data['Sales'], bins=[-1, q1, q3, float('inf')], labels=['Low', 'Medium', 'High'])
+
+# Группировка по региону и группе продаж
+grouped = data.groupby(['Region', 'Sale_group'])
+
+# Расчет суммарных продаж для каждой группы
+sales_sum = grouped['Sales'].sum()
+
+# Функция для вывода самой прибыльной группы
+def print_most_profitable_group(sales_sum):
+    most_profitable = sales_sum.idxmax()
+    region, sale_group = most_profitable
+    max_sales = sales_sum.max()
+    print(f"Наиболее прибыльная группа: {sale_group} продажи в регионе {region} с суммой продаж {max_sales:.2f}")
+
+# Вывод результатов
+print_most_profitable_group(sales_sum)
+
+# Анализ тенденций и паттернов
+print("\nОсновные тенденции и паттерны:")
+for (reg, sg), sales in sales_sum.items():
+    print(f"Регион: {reg}, Группа продаж: {sg}, Суммарные продажи: {sales:.2f}")
